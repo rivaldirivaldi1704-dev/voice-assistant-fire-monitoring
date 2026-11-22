@@ -5,180 +5,124 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fire Monitoring Voice Assistant</title>
-
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
   background: #101827;
   color: white;
+  font-family: Arial, sans-serif;
 }
 
 header {
+  background: #19283e;
   text-align: center;
-  padding: 25px 15px;
-  background: #17243a;
-  border-bottom: 2px solid #334155;
+  padding: 25px 12px;
 }
 
-header h1 {
-  color: #ff5b5b;
-  margin: 0 0 10px;
-}
-
-header p {
-  color: #bdc8d8;
-  margin: 0;
-}
+header h1 { color: #ff5757; }
+header p { color: #cbd5e1; }
 
 .container {
-  max-width: 950px;
+  max-width: 900px;
   margin: auto;
-  padding: 20px;
+  padding: 18px;
 }
 
-.connection {
-  background: #263449;
-  border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.indicator {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  background: #facc15;
-  border-radius: 50%;
-  margin-right: 8px;
+.card {
+  background: #1e293b;
+  border: 1px solid #394b63;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 15px;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-}
-
-.card {
-  background: #1e293b;
-  border: 1px solid #34445c;
-  border-radius: 15px;
-  padding: 20px;
-  text-align: center;
-}
-
-.card h3 {
-  color: #aebdd0;
-  margin-top: 0;
-  font-size: 15px;
-}
-
-.value {
-  font-size: 32px;
-  font-weight: bold;
-  margin: 12px 0;
-}
-
-.status {
-  font-size: 23px;
-  font-weight: bold;
-  color: #22c55e;
-}
-
-.normal { color: #22c55e; }
-.warning { color: #facc15; }
-.danger { color: #ff4545; }
-
-.devices {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  margin-top: 20px;
+}
+
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
 .device {
-  background: #1e293b;
+  background: #263449;
   border-radius: 12px;
-  padding: 17px 8px;
+  padding: 18px 8px;
   text-align: center;
-  border: 1px solid #34445c;
 }
 
 .device h3 {
+  color: #cbd5e1;
   font-size: 14px;
-  color: #aebdd0;
+}
+
+.value {
+  font-size: 27px;
+  font-weight: bold;
 }
 
 .device-value {
   font-size: 17px;
   font-weight: bold;
+  margin-top: 10px;
 }
+
+.green { color: #22c55e; }
+.yellow { color: #facc15; }
+.red { color: #ff4545; }
 
 button {
-  border: none;
-  border-radius: 10px;
-  padding: 14px 18px;
-  margin: 6px;
-  font-size: 15px;
-  font-weight: bold;
-  cursor: pointer;
   background: #2563eb;
   color: white;
+  border: none;
+  border-radius: 9px;
+  padding: 13px 16px;
+  margin: 5px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
-button:hover {
-  opacity: 0.85;
+input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 15px;
 }
 
-.voice-area {
-  background: #1e293b;
-  padding: 20px;
-  margin-top: 20px;
-  border-radius: 15px;
-  text-align: center;
-}
-
-#voiceResult {
+#jawaban {
   color: #cbd5e1;
-  margin-top: 12px;
+  line-height: 1.6;
+  margin-top: 15px;
+}
+
+#koneksi {
+  text-align: center;
+  color: #facc15;
 }
 
 .log {
-  margin-top: 20px;
-  background: #1e293b;
-  padding: 15px;
-  border-radius: 12px;
+  color: #cbd5e1;
   overflow-wrap: anywhere;
   font-size: 13px;
-  color: #cbd5e1;
 }
 
 footer {
   text-align: center;
   padding: 20px;
   color: #94a3b8;
-  font-size: 12px;
 }
 
-@media(max-width:600px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-
-  .devices {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .value {
-    font-size: 27px;
-  }
+@media(max-width:500px) {
+  .value { font-size: 23px; }
 }
 </style>
 </head>
@@ -192,92 +136,97 @@ footer {
 
 <div class="container">
 
-  <div class="connection">
-    <span class="indicator" id="mqttIndicator"></span>
-    <span id="mqttStatus">Menghubungkan ke MQTT...</span>
-    <p id="lastUpdate">Belum ada data diterima</p>
+  <div class="card">
+    <div id="koneksi">Menghubungkan ke MQTT...</div>
+    <p id="waktu" style="text-align:center">
+      Menunggu data ESP32
+    </p>
   </div>
 
   <div class="grid">
 
     <div class="card">
       <h3>🌡️ SUHU</h3>
-      <div class="value" id="temperature">-- °C</div>
+      <div class="value" id="suhu">-- °C</div>
     </div>
 
     <div class="card">
       <h3>💧 KELEMBAPAN</h3>
-      <div class="value" id="humidity">-- %</div>
+      <div class="value" id="kelembapan">-- %</div>
     </div>
 
     <div class="card">
-      <h3>🚨 STATUS KEBAKARAN</h3>
-      <div class="status" id="fireStatus">MENUNGGU DATA</div>
+      <h3>🚨 STATUS</h3>
+      <div class="value" id="status">MENUNGGU</div>
     </div>
 
     <div class="card">
-      <h3>📡 STATUS SISTEM</h3>
-      <div class="value" id="systemStatus">MENUNGGU</div>
+      <h3>📡 STATUS DATA</h3>
+      <div class="value green" id="dataStatus">MENUNGGU</div>
     </div>
 
   </div>
 
-  <h3 style="margin-top:25px;">Kondisi Perangkat</h3>
+  <div class="card">
+    <h3>PERANGKAT FIRE MONITORING</h3>
 
-  <div class="devices">
+    <div class="device-grid">
 
-    <div class="device">
-      <h3>🔊 BUZZER</h3>
-      <div class="device-value" id="buzzer">--</div>
+      <div class="device">
+        <h3>🟢 LED HIJAU</h3>
+        <div class="device-value" id="hijau">MENUNGGU</div>
+      </div>
+
+      <div class="device">
+        <h3>🔴 LED MERAH</h3>
+        <div class="device-value" id="merah">MENUNGGU</div>
+      </div>
+
+      <div class="device">
+        <h3>🔊 BUZZER</h3>
+        <div class="device-value" id="buzzer">MENUNGGU</div>
+      </div>
+
+      <div class="device">
+        <h3>⚡ RELAY</h3>
+        <div class="device-value" id="relay">MENUNGGU</div>
+      </div>
+
     </div>
-
-    <div class="device">
-      <h3>🔴 LED</h3>
-      <div class="device-value" id="led">--</div>
-    </div>
-
-    <div class="device">
-      <h3>⚡ RELAY</h3>
-      <div class="device-value" id="relay">--</div>
-    </div>
-
   </div>
 
-  <div class="voice-area">
+  <div class="card">
     <h3>🎙️ VOICE ASSISTANT</h3>
-    <p>Tanyakan kondisi Fire Monitoring melalui suara.</p>
 
-    <button onclick="readStatus()">
-      🔊 BACA KONDISI
+    <button onclick="laporanLengkap()">
+      🔊 BACA SEMUA KONDISI
     </button>
 
-    <button onclick="startVoice()">
+    <button onclick="mulaiMikrofon()">
       🎙️ BICARA
     </button>
 
-    <div id="voiceResult">
+    <p id="jawaban">
       Voice Assistant siap digunakan.
-    </div>
+    </p>
   </div>
 
-  <div class="voice-area">
-    <h3>💬 Tanyakan Kondisi Sistem</h3>
+  <div class="card">
+    <h3>💬 TANYAKAN KONDISI PERANGKAT</h3>
 
     <input
-      id="question"
-      type="text"
-      placeholder="Contoh: Bagaimana kondisi suhu?"
-      style="width:100%;padding:13px;border-radius:8px;border:none;"
+      id="pertanyaan"
+      placeholder="Contoh: Apakah buzzer menyala?"
     >
 
-    <button onclick="askQuestion()">
+    <button onclick="kirimPertanyaan()">
       KIRIM PERTANYAAN
     </button>
   </div>
 
-  <div class="log">
-    <strong>📋 INFORMASI MQTT</strong>
-    <p id="mqttLog">Menunggu data dari ESP32...</p>
+  <div class="card log">
+    <b>INFORMASI MQTT</b>
+    <p id="log">Menunggu data...</p>
   </div>
 
 </div>
@@ -288,368 +237,494 @@ footer {
 
 <script>
 
-// ==================================
-// KONFIGURASI MQTT
-// ==================================
+// ======================================
+// 1. KONFIGURASI MQTT
+// ======================================
 
-const MQTT_BROKER = "wss://broker.hivemq.com:8884/mqtt";
-const MQTT_TOPIC = "mall/gudang/kebakaran";
+const BROKER = "wss://broker.hivemq.com:8884/mqtt";
+const TOPIC = "mall/gudang/kebakaran";
 
-let suhu = null;
-let kelembapan = null;
-let status = "MENUNGGU DATA";
-let buzzer = false;
-let led = false;
-let relay = false;
-let lastReceived = 0;
+let data = null;
+let waktuTerakhir = 0;
 
-const indicator = document.getElementById("mqttIndicator");
-const mqttStatus = document.getElementById("mqttStatus");
+const el = id => document.getElementById(id);
 
-// ==================================
-// KONEKSI MQTT
-// ==================================
-
-const client = mqtt.connect(MQTT_BROKER, {
-  clientId: "FireVoice_" + Math.random().toString(16).slice(2),
+const mqttClient = mqtt.connect(BROKER, {
+  clientId: "FireAssistant_" +
+    Math.random().toString(16).slice(2),
   clean: true,
   connectTimeout: 10000,
   reconnectPeriod: 3000
 });
 
-client.on("connect", function() {
+// ======================================
+// 2. KONEKSI MQTT
+// ======================================
 
-  mqttStatus.textContent = "MQTT TERHUBUNG";
-  indicator.style.background = "#22c55e";
+mqttClient.on("connect", () => {
 
-  client.subscribe(MQTT_TOPIC, function(error) {
+  el("koneksi").textContent = "MQTT TERHUBUNG";
+  el("koneksi").style.color = "#22c55e";
 
-    if (error) {
-      mqttStatus.textContent = "Gagal subscribe topic";
-      return;
+  mqttClient.subscribe(TOPIC, error => {
+    if (!error) {
+      el("log").textContent =
+        "Berhasil terhubung ke topic " + TOPIC;
+    } else {
+      el("log").textContent =
+        "Gagal subscribe MQTT.";
     }
-
-    console.log("Berhasil subscribe:", MQTT_TOPIC);
-    document.getElementById("mqttLog").textContent =
-      "Terhubung. Topic: " + MQTT_TOPIC;
-
   });
 
 });
 
-client.on("reconnect", function() {
-  mqttStatus.textContent = "Menghubungkan ulang...";
-  indicator.style.background = "#facc15";
+mqttClient.on("offline", () => {
+  el("koneksi").textContent = "MQTT TERPUTUS";
+  el("koneksi").style.color = "#ff4545";
 });
 
-client.on("offline", function() {
-  mqttStatus.textContent = "MQTT OFFLINE";
-  indicator.style.background = "#ef4444";
+mqttClient.on("reconnect", () => {
+  el("koneksi").textContent = "MENGHUBUNGKAN ULANG...";
+  el("koneksi").style.color = "#facc15";
 });
 
-client.on("error", function(error) {
-  console.error("MQTT Error:", error);
-  mqttStatus.textContent = "Koneksi MQTT bermasalah";
-  indicator.style.background = "#ef4444";
+mqttClient.on("error", error => {
+  console.log("MQTT error:", error);
 });
 
-// ==================================
-// MENERIMA DATA ESP32
-// ==================================
+// ======================================
+// 3. MEMBACA NILAI BOOLEAN
+// ======================================
 
-client.on("message", function(topic, message) {
+function bacaBoolean(nilai, cadangan) {
+
+  if (typeof nilai === "boolean") return nilai;
+
+  if (typeof nilai === "number") {
+    return nilai !== 0;
+  }
+
+  if (typeof nilai === "string") {
+
+    const v = nilai.toLowerCase().trim();
+
+    if (["true", "1", "on", "aktif", "menyala"].includes(v))
+      return true;
+
+    if (["false", "0", "off", "mati", "tidak aktif"].includes(v))
+      return false;
+  }
+
+  return cadangan;
+}
+
+// ======================================
+// 4. MENERIMA DATA ESP32
+// ======================================
+
+mqttClient.on("message", (topic, message) => {
 
   try {
 
-    const data = JSON.parse(message.toString());
+    const d = JSON.parse(message.toString());
 
-    console.log("Data MQTT:", data);
+    const suhu = Number(d.suhu);
+    const kelembapan = Number(d.kelembapan);
 
-    if (typeof data.suhu === "number") {
-      suhu = data.suhu;
-      document.getElementById("temperature").textContent =
-        suhu.toFixed(1) + " °C";
+    const status = String(d.status || "")
+      .trim().toUpperCase();
+
+    if (!Number.isFinite(suhu) ||
+        !Number.isFinite(kelembapan)) {
+      throw new Error("Nilai sensor tidak valid.");
     }
 
-    if (typeof data.kelembapan === "number") {
-      kelembapan = data.kelembapan;
-      document.getElementById("humidity").textContent =
-        kelembapan.toFixed(1) + " %";
+    if (!["NORMAL", "WASPADA", "BAHAYA"].includes(status)) {
+      throw new Error("Status suhu tidak dikenal.");
     }
 
-    if (typeof data.status === "string") {
-      status = data.status.toUpperCase();
+    // Logika perangkat mengikuti program ESP32
+
+    let hijau = false;
+    let merah = false;
+    let berkedip = false;
+    let buzzerDefault = false;
+    let relayDefault = false;
+
+    if (status === "NORMAL") {
+      hijau = true;
     }
 
-    if (typeof data.buzzer === "boolean") {
-      buzzer = data.buzzer;
+    if (status === "WASPADA") {
+      berkedip = true;
+      buzzerDefault = true;
     }
 
-    if (typeof data.led === "boolean") {
-      led = data.led;
+    if (status === "BAHAYA") {
+      merah = true;
+      buzzerDefault = true;
+      relayDefault = true;
     }
 
-    if (typeof data.relay === "boolean") {
-      relay = data.relay;
-    }
+    data = {
+      suhu,
+      kelembapan,
+      status,
 
-    updateDisplay();
+      hijau,
+      merah,
+      berkedip,
 
-    lastReceived = Date.now();
+      buzzer: bacaBoolean(d.buzzer, buzzerDefault),
+      relay: bacaBoolean(d.relay, relayDefault)
+    };
 
-    document.getElementById("lastUpdate").textContent =
-      "Data terakhir: " + new Date().toLocaleTimeString("id-ID");
+    waktuTerakhir = Date.now();
 
-    document.getElementById("mqttLog").textContent =
-      "Data berhasil diterima dari topic: " + topic;
+    tampilkan();
+
+    el("waktu").textContent =
+      "Pembaruan: " + new Date().toLocaleTimeString("id-ID");
+
+    el("dataStatus").textContent = "AKTIF";
+    el("dataStatus").className = "value green";
+
+    el("log").textContent =
+      "Data berhasil diterima: " + message.toString();
 
   } catch(error) {
 
-    console.error("Format data tidak valid:", error);
+    console.error(error);
 
-    document.getElementById("mqttLog").textContent =
-      "Format JSON tidak valid: " + message.toString();
+    el("log").textContent =
+      "Kesalahan membaca data: " + error.message;
 
   }
 
 });
 
-// ==================================
-// UPDATE TAMPILAN
-// ==================================
+// ======================================
+// 5. MENAMPILKAN DATA
+// ======================================
 
-function updateDisplay() {
+function tampilkan() {
 
-  const statusElement = document.getElementById("fireStatus");
+  if (!data) return;
 
-  statusElement.textContent = status;
+  el("suhu").textContent =
+    data.suhu.toFixed(1) + " °C";
 
-  statusElement.className = "status";
+  el("kelembapan").textContent =
+    data.kelembapan.toFixed(1) + " %";
 
-  if (status === "NORMAL") {
-    statusElement.classList.add("normal");
-  }
+  el("status").textContent = data.status;
 
-  else if (status === "WASPADA") {
-    statusElement.classList.add("warning");
-  }
+  el("status").className = "value " +
+    (data.status === "NORMAL" ? "green" :
+     data.status === "WASPADA" ? "yellow" : "red");
 
-  else if (status === "BAHAYA") {
-    statusElement.classList.add("danger");
-  }
+  el("hijau").textContent =
+    data.hijau ? "MENYALA" : "MATI";
 
-  document.getElementById("systemStatus").textContent =
-    "AKTIF";
+  el("hijau").className =
+    "device-value " + (data.hijau ? "green" : "");
 
-  document.getElementById("buzzer").textContent =
-    buzzer ? "MENYALA" : "MATI";
+  el("merah").textContent =
+    data.berkedip ? "BERKEDIP" :
+    data.merah ? "MENYALA TERUS" : "MATI";
 
-  document.getElementById("led").textContent =
-    led ? "MENYALA" : "MATI";
+  el("merah").className =
+    "device-value " +
+    (data.berkedip || data.merah ? "red" : "");
 
-  document.getElementById("relay").textContent =
-    relay ? "AKTIF" : "MATI";
+  el("buzzer").textContent =
+    data.buzzer ? "MENYALA" : "MATI";
+
+  el("buzzer").className =
+    "device-value " + (data.buzzer ? "red" : "");
+
+  el("relay").textContent =
+    data.relay ? "AKTIF" : "MATI";
+
+  el("relay").className =
+    "device-value " + (data.relay ? "yellow" : "");
 }
 
-// ==================================
-// CEK DATA TERPUTUS
-// ==================================
+// ======================================
+// 6. PEMERIKSAAN DATA TERPUTUS
+// ======================================
 
-setInterval(function() {
+setInterval(() => {
 
-  if (lastReceived > 0 &&
-      Date.now() - lastReceived > 15000) {
+  if (waktuTerakhir > 0 &&
+      Date.now() - waktuTerakhir > 15000) {
 
-    document.getElementById("systemStatus").textContent =
-      "TERPUTUS";
+    el("dataStatus").textContent = "TERPUTUS";
+    el("dataStatus").className = "value red";
 
-    document.getElementById("lastUpdate").textContent =
-      "Data tidak diterima selama 15 detik";
+    el("koneksi").textContent = "DATA SENSOR TERHENTI";
+    el("koneksi").style.color = "#ff4545";
 
   }
 
-}, 3000);
+}, 2000);
 
-// ==================================
-// MEMBUAT LAPORAN SUARA
-// ==================================
+// ======================================
+// 7. LAPORAN LENGKAP
+// ======================================
 
-function makeReport() {
+function buatLaporan() {
 
-  if (suhu === null || kelembapan === null) {
-    return "Belum ada data Fire Monitoring yang diterima.";
+  if (!data) {
+    return "Data sensor belum diterima.";
   }
 
   let pesan = "Laporan Fire Monitoring. ";
-  pesan += "Suhu saat ini " + suhu + " derajat Celsius. ";
-  pesan += "Kelembapan " + kelembapan + " persen. ";
-  pesan += "Status sistem " + status + ". ";
 
-  pesan += buzzer
-    ? "Buzzer sedang menyala. "
-    : "Buzzer mati. ";
+  pesan += "Suhu " + data.suhu +
+    " derajat Celsius. ";
 
-  pesan += led
-    ? "Lampu indikator menyala. "
-    : "Lampu indikator mati. ";
+  pesan += "Kelembapan " + data.kelembapan +
+    " persen. ";
 
-  pesan += relay
-    ? "Relay sedang aktif. "
-    : "Relay tidak aktif. ";
+  pesan += "Status " + data.status + ". ";
 
-  if (status === "BAHAYA") {
-    pesan += "Peringatan! Suhu berada pada kategori bahaya.";
+  pesan += "LED hijau " +
+    (data.hijau ? "menyala. " : "mati. ");
+
+  if (data.berkedip) {
+    pesan += "LED merah berkedip. ";
+  } else if (data.merah) {
+    pesan += "LED merah menyala terus. ";
+  } else {
+    pesan += "LED merah mati. ";
   }
 
-  else if (status === "WASPADA") {
-    pesan += "Perhatian, suhu berada pada kategori waspada.";
+  pesan += "Buzzer " +
+    (data.buzzer ? "menyala dan berbunyi. " : "mati. ");
+
+  pesan += "Relay " +
+    (data.relay ? "aktif. " : "mati. ");
+
+  if (data.status === "NORMAL") {
+    pesan += "Kondisi suhu normal.";
   }
 
-  else if (status === "NORMAL") {
-    pesan += "Kondisi suhu saat ini normal.";
+  if (data.status === "WASPADA") {
+    pesan += "Peringatan waspada. ";
+    pesan += "Suhu mencapai batas waspada.";
+  }
+
+  if (data.status === "BAHAYA") {
+    pesan += "Peringatan bahaya. ";
+    pesan += "Suhu mencapai batas bahaya.";
   }
 
   return pesan;
 }
 
-// ==================================
-// TEXT TO SPEECH
-// ==================================
+function laporanLengkap() {
+  bicara(buatLaporan());
+}
 
-function speak(text) {
+// ======================================
+// 8. SUARA BAHASA INDONESIA
+// ======================================
 
-  if (!("speechSynthesis" in window)) {
-    document.getElementById("voiceResult").textContent =
+function bicara(teks) {
+
+  if (!window.speechSynthesis) {
+    el("jawaban").textContent =
       "Browser tidak mendukung suara.";
     return;
   }
 
   window.speechSynthesis.cancel();
 
-  const ucapan = new SpeechSynthesisUtterance(text);
+  const suara = new SpeechSynthesisUtterance(teks);
 
-  ucapan.lang = "id-ID";
-  ucapan.rate = 0.95;
-  ucapan.pitch = 1;
-  ucapan.volume = 1;
+  suara.lang = "id-ID";
+  suara.rate = 0.9;
+  suara.pitch = 1;
+  suara.volume = 1;
 
-  window.speechSynthesis.speak(ucapan);
+  el("jawaban").textContent = teks;
 
-  document.getElementById("voiceResult").textContent = text;
+  window.speechSynthesis.speak(suara);
 }
 
-function readStatus() {
-  speak(makeReport());
-}
+// ======================================
+// 9. MENJAWAB PERTANYAAN
+// ======================================
 
-// ==================================
-// MENJAWAB PERTANYAAN
-// ==================================
+function jawab(teks) {
 
-function answerQuestion(question) {
-
-  const q = question.toLowerCase();
-
-  if (suhu === null) {
-    speak("Belum ada data sensor yang diterima.");
+  if (!data) {
+    bicara("Data Fire Monitoring belum diterima.");
     return;
   }
 
-  if (q.includes("suhu") || q.includes("temperatur")) {
-    speak("Suhu saat ini " + suhu + " derajat Celsius.");
-  }
+  const q = teks.toLowerCase();
 
-  else if (q.includes("kelembapan")) {
-    speak("Kelembapan saat ini " + kelembapan + " persen.");
-  }
+  // LED HIJAU
+  if (q.includes("hijau")) {
 
-  else if (q.includes("status") || q.includes("kondisi")) {
-    speak("Status Fire Monitoring saat ini " + status + ".");
-  }
+    bicara(
+      data.hijau
+        ? "LED hijau sedang menyala."
+        : "LED hijau sedang mati."
+    );
 
-  else if (q.includes("buzzer")) {
-    speak(buzzer ? "Buzzer sedang menyala." : "Buzzer sedang mati.");
-  }
-
-  else if (q.includes("lampu") || q.includes("led")) {
-    speak(led ? "Lampu indikator sedang menyala." : "Lampu indikator sedang mati.");
-  }
-
-  else if (q.includes("relay")) {
-    speak(relay ? "Relay sedang aktif." : "Relay sedang mati.");
-  }
-
-  else if (q.includes("laporan") || q.includes("semua")) {
-    readStatus();
-  }
-
-  else {
-    speak("Maaf, saya belum memahami pertanyaan tersebut. Silakan tanyakan suhu, kelembapan, status, buzzer, lampu, atau relay.");
-  }
-}
-
-function askQuestion() {
-
-  const input = document.getElementById("question");
-  const question = input.value.trim();
-
-  if (!question) {
-    speak("Silakan tuliskan pertanyaan terlebih dahulu.");
     return;
   }
 
-  answerQuestion(question);
+  // LED MERAH
+  if (q.includes("merah")) {
+
+    if (data.berkedip) {
+      bicara("LED merah sedang berkedip.");
+    } else if (data.merah) {
+      bicara("LED merah menyala terus.");
+    } else {
+      bicara("LED merah sedang mati.");
+    }
+
+    return;
+  }
+
+  // BUZZER
+  if (q.includes("buzzer") ||
+      q.includes("bel") ||
+      q.includes("alarm suara")) {
+
+    bicara(
+      data.buzzer
+        ? "Buzzer sedang aktif dan diperintahkan berbunyi."
+        : "Buzzer sedang mati dan tidak diperintahkan berbunyi."
+    );
+
+    return;
+  }
+
+  // RELAY
+  if (q.includes("relay")) {
+
+    bicara(
+      data.relay
+        ? "Relay sedang aktif."
+        : "Relay sedang mati."
+    );
+
+    return;
+  }
+
+  // SUHU
+  if (q.includes("suhu") ||
+      q.includes("temperatur")) {
+
+    bicara(
+      "Suhu sekarang " + data.suhu +
+      " derajat Celsius."
+    );
+
+    return;
+  }
+
+  // KELEMBAPAN
+  if (q.includes("kelembapan")) {
+
+    bicara(
+      "Kelembapan sekarang " +
+      data.kelembapan + " persen."
+    );
+
+    return;
+  }
+
+  // STATUS
+  if (q.includes("status") ||
+      q.includes("kondisi") ||
+      q.includes("laporan")) {
+
+    bicara(buatLaporan());
+    return;
+  }
+
+  // SEMUA PERANGKAT
+  if (q.includes("semua") ||
+      q.includes("seluruh")) {
+
+    bicara(buatLaporan());
+    return;
+  }
+
+  bicara(
+    "Maaf, saya belum memahami pertanyaan. " +
+    "Silakan tanyakan LED hijau, LED merah, buzzer, relay, suhu, atau kelembapan."
+  );
+}
+
+// ======================================
+// 10. INPUT PERTANYAAN
+// ======================================
+
+function kirimPertanyaan() {
+
+  const input = el("pertanyaan");
+  const teks = input.value.trim();
+
+  if (!teks) {
+    bicara("Silakan masukkan pertanyaan.");
+    return;
+  }
+
+  jawab(teks);
   input.value = "";
 }
 
-// ==================================
-// SPEECH RECOGNITION
-// ==================================
+// ======================================
+// 11. PERINTAH MIKROFON
+// ======================================
 
-function startVoice() {
+function mulaiMikrofon() {
 
-  const SpeechRecognition =
+  const Recognition =
     window.SpeechRecognition ||
     window.webkitSpeechRecognition;
 
-  if (!SpeechRecognition) {
-
-    document.getElementById("voiceResult").textContent =
-      "Pengenalan suara tidak tersedia. Gunakan kolom pertanyaan.";
-
+  if (!Recognition) {
+    el("jawaban").textContent =
+      "Pengenalan suara tidak didukung. Gunakan kolom pertanyaan.";
     return;
   }
 
-  const recognition = new SpeechRecognition();
+  const mic = new Recognition();
 
-  recognition.lang = "id-ID";
-  recognition.continuous = false;
-  recognition.interimResults = false;
+  mic.lang = "id-ID";
+  mic.continuous = false;
+  mic.interimResults = false;
 
-  recognition.onstart = function() {
-    document.getElementById("voiceResult").textContent =
-      "Silakan berbicara...";
+  mic.onstart = () => {
+    el("jawaban").textContent = "Silakan berbicara...";
   };
 
-  recognition.onresult = function(event) {
+  mic.onresult = event => {
 
-    const question =
+    const teks =
       event.results[0][0].transcript;
 
-    document.getElementById("voiceResult").textContent =
-      "Pertanyaan: " + question;
+    el("jawaban").textContent =
+      "Pertanyaan: " + teks;
 
-    answerQuestion(question);
+    jawab(teks);
   };
 
-  recognition.onerror = function(event) {
-
-    document.getElementById("voiceResult").textContent =
+  mic.onerror = event => {
+    el("jawaban").textContent =
       "Mikrofon bermasalah: " + event.error;
-
   };
 
-  recognition.start();
+  mic.start();
 }
 
 </script>
